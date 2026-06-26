@@ -1,0 +1,28 @@
+#cloud-config
+users:
+  - name: nix
+    gecos: Nix Admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-rsa REPLACE_WITH_YOUR_PUBLIC_KEY
+
+# bootcmd runs early in the installer environment; it clones the flake and runs nixos-install
+# waits a bit for network then clones this repository and installs the flake configuration
+bootcmd:
+  - [ bash, -lc, 'set -eux
+      # wait for network
+      for i in $(seq 1 12); do
+        if ip -4 addr show scope global | grep -q inet; then break; fi
+        sleep 5
+      done
+      # clone the repo containing the flake (this repo)
+      rm -rf /root/nixos-pmox-installer
+      git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer
+      cd /root/nixos-pmox-installer
+      # Install using the flake (target name: #proxmox-vm). Retry once on failure.
+      nixos-install --no-root-passwd --flake .#proxmox-vm || (sleep 5 && nixos-install --no-root-passwd --flake .#proxmox-vm) || true
+    ' ]
+
+runcmd:
+  - [ bash, -lc, 'sync' ]
