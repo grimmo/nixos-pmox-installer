@@ -6,33 +6,28 @@ users:
     shell: /bin/bash
     ssh-authorized-keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkq//P4prSN4rgyjTGbx6Ufk0a34UuT+63g3wtl9E3g gigi@SEVEN
-
-network:
-  version: 2
-  ethernets:
-    eth0:
-      dhcp4: false
-      addresses: [10.9.9.2/24]
-      gateway4: 10.9.9.1
-      nameservers:
-        addresses: [1.1.1.1]
+write_files:
+  - path: /etc/NetworkManager/conf.d/99-dhcp-disable.conf
+    content: |
+      [main]
+      dhcp=no
+  - path: /etc/NetworkManager/system-connections/eth0.nmconnection
+    permissions: 0600
+    content: |
+      [connection]
+      id=eth0
+      uuid=12345678-1234-1234-1234-123456789012
+      type=802-3-ethernet
+      interface-name=eth0
+      autoconnect=yes
+      
+      [ipv4]
+      method=manual
+      address1=10.9.9.2/24,10.9.9.1
+      dns=1.1.1.1
+      ignore-auto-dns=true
 
 bootcmd:
-  - [ bash, -lc, 'set -eux
-      # bring up network (cloud-init network config may not have applied yet)
-      ip link set eth0 up
-      ip addr add 10.9.9.2/24 dev eth0
-      ip route add default via 10.9.9.1
-      sleep 2
-      # verify connectivity
-      ping -c 1 10.9.9.1 || true
-      # clone repo
-      rm -rf /root/nixos-pmox-installer
-      git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer
-      cd /root/nixos-pmox-installer
-      # install
-      nixos-install --no-root-passwd --flake flake.nix || (sleep 5 && nixos-install --no-root-passwd --flake flake.nix) || true
-    ' ]
-
-runcmd:
-  - [ bash, -lc, 'sync' ]
+  - [ systemctl, restart, NetworkManager ]
+  - [ sleep, 3 ]
+  - [ bash, -lc, 'git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer && cd /root/nixos-pmox-installer && nixos-install --no-root-passwd --flake .#proxmox-vm' ]
