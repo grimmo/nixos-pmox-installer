@@ -1,4 +1,17 @@
 #cloud-config
+
+# Static network configuration for the primary interface. Change the interface
+# name (eth0) below if your VM uses a different device name (e.g. ens3).
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: false
+      addresses: [10.9.9.2/24]
+      gateway4: 10.9.9.1
+      nameservers:
+        addresses: [1.1.1.1]
+
 users:
   - name: gigi
     gecos: Luigi
