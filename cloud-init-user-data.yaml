@@ -30,4 +30,4 @@ write_files:
 bootcmd:
   - [ systemctl, restart, NetworkManager ]
   - [ sleep, 3 ]
-  - [ bash, -lc, 'git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer && cd /root/nixos-pmox-installer && nixos-install --no-root-passwd --flake .#proxmox-vm' ]
+  - [ bash, -lc, 'git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer && cd /root/nixos-pmox-installer && nixos-install --no-root-passwd --flake flake.nix' ]
