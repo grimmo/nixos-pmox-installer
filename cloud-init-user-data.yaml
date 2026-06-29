@@ -21,7 +21,7 @@ bootcmd:
       git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer
       cd /root/nixos-pmox-installer
       # Install using the flake (target name: #proxmox-vm). Retry once on failure.
-      nixos-install --no-root-passwd --flake .#proxmox-vm || (sleep 5 && nixos-install --no-root-passwd --flake .#proxmox-vm) || true
+      nixos-install --no-root-passwd --flake flake.nix || (sleep 5 && nixos-install --no-root-passwd --flake flake.nix) || true
     ' ]
 
 runcmd:
