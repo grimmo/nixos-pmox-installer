@@ -1,7 +1,12 @@
 #cloud-config
+users:
+  - name: gigi
+    gecos: LuigiNix Admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkq//P4prSN4rgyjTGbx6Ufk0a34UuT+63g3wtl9E3g gigi@SEVEN
 
-# Static network configuration for the primary interface. Change the interface
-# name (eth0) below if your VM uses a different device name (e.g. ens3).
 network:
   version: 2
   ethernets:
@@ -12,28 +17,20 @@ network:
       nameservers:
         addresses: [1.1.1.1]
 
-users:
-  - name: gigi
-    gecos: Luigi
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-    ssh-authorized-keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBkq//P4prSN4rgyjTGbx6Ufk0a34UuT+63g3wtl9E3g gigi@SEVEN
-
-# bootcmd runs early in the installer environment; it clones the flake and runs nixos-install
-# waits a bit for network then clones this repository and installs the flake configuration
 bootcmd:
   - [ bash, -lc, 'set -eux
-      # wait for network
-      for i in $(seq 1 12); do
-        if ip -4 addr show scope global | grep -q inet; then break; fi
-        sleep 5
-      done
-      # clone the repo containing the flake (this repo)
+      # bring up network (cloud-init network config may not have applied yet)
+      ip link set eth0 up
+      ip addr add 10.9.9.2/24 dev eth0
+      ip route add default via 10.9.9.1
+      sleep 2
+      # verify connectivity
+      ping -c 1 10.9.9.1 || true
+      # clone repo
       rm -rf /root/nixos-pmox-installer
       git clone https://github.com/grimmo/nixos-pmox-installer.git /root/nixos-pmox-installer
       cd /root/nixos-pmox-installer
-      # Install using the flake (target name: #proxmox-vm). Retry once on failure.
+      # install
       nixos-install --no-root-passwd --flake flake.nix || (sleep 5 && nixos-install --no-root-passwd --flake flake.nix) || true
     ' ]
 
